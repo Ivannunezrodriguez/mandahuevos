@@ -1,0 +1,24 @@
+/* Estilos para el contenido del blog inyectado vía HTML */
+.blog-content h3 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: var(--color-accent-primary);
+    font-size: 1.5rem;
+}
+
+.blog-content p {
+    margin-bottom: 1.5rem;
+}
+
+.blog-content ul {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+
+.blog-content li {
+    margin-bottom: 0.5rem;
+}
+
+.blog-content strong {
+    color: var(--color-text-primary);
+}

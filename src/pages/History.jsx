@@ -27,7 +27,7 @@ export function History() {
     }, [user]);
 
     const handleRepeatOrder = (order) => {
-        navigate('/new-order', { state: { initialCart: order.items } });
+        navigate('/new-order', { state: { initialCart: order.items, isRecurring: true } });
     };
 
     const handleViewInvoice = (order) => {

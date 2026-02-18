@@ -248,9 +248,10 @@ export const DbAdapter = {
                     delivery_date: orderData.deliveryDate,
                     payment_method: orderData.paymentMethod,
                     status: 'pending',
-                    invoice_number: orderData.invoiceNumber || `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`, // Fallback generador básico
-                    shipping_address: orderData.shippingAddress, // NEW: Shipping Logic
-                    shipping_town: orderData.shippingTown       // NEW: Shipping Logic
+                    invoice_number: orderData.invoiceNumber || `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+                    shipping_address: orderData.shippingAddress,
+                    shipping_town: orderData.shippingTown,
+                    is_recurring: orderData.isRecurring || false // NEW: Recurring Flag
                 }])
                 .select()
                 .single();
@@ -280,7 +281,8 @@ export const DbAdapter = {
                 createdAt: new Date().toISOString(),
                 status: 'pending',
                 invoiceNumber: `INV-${new Date().getFullYear()}-${(orders.length + 1).toString().padStart(4, '0')}`,
-                ...orderData // This already spreads shippingAddress and shippingTown
+                isRecurring: orderData.isRecurring || false,
+                ...orderData
             };
             orders.push(newOrder);
             localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
@@ -294,7 +296,7 @@ export const DbAdapter = {
                 .from('orders')
                 .select(`
                     id, created_at, total, status, delivery_date, payment_method, invoice_number,
-                    shipping_address, shipping_town,
+                    shipping_address, shipping_town, is_recurring,
                     order_items ( product_id, quantity, price_at_purchase )
                 `)
                 .eq('user_id_ref', userId)
@@ -312,6 +314,7 @@ export const DbAdapter = {
                 invoiceNumber: o.invoice_number || `INV-${new Date(o.created_at).getFullYear()}-${o.id.slice(0, 4)}`,
                 shippingAddress: o.shipping_address,
                 shippingTown: o.shipping_town,
+                isRecurring: o.is_recurring,
                 items: o.order_items.map(i => ({
                     id: i.product_id,
                     name: `Producto ${i.product_id}`, // Mejorar si products disponibles
@@ -360,7 +363,8 @@ export const DbAdapter = {
                 .from('orders')
                 .select(`
                     id, created_at, total, status, delivery_date, payment_method, invoice_number, user_id_ref,
-                    shipping_address, shipping_town,
+                    shipping_address, shipping_town, is_recurring,
+                    profiles ( email ),
                     order_items ( product_id, quantity, price_at_purchase )
                 `)
                 .order('created_at', { ascending: false });
@@ -378,6 +382,7 @@ export const DbAdapter = {
                 invoiceNumber: o.invoice_number,
                 shippingAddress: o.shipping_address,
                 shippingTown: o.shipping_town,
+                isRecurring: o.is_recurring,
                 items: o.order_items.map(i => ({
                     id: i.product_id,
                     price: i.price_at_purchase,

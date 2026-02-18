@@ -10,6 +10,7 @@ export function NewOrder() {
     const navigate = useNavigate();
     const location = useLocation(); // Para recuperar el estado de "Repetir Pedido"
     const [cart, setCart] = useState({});
+    const [isRecurringOrder, setIsRecurringOrder] = useState(false); // NEW: Recurrence Flag
     const [step, setStep] = useState(1); // 1: Selección, 2: Confirmación
     const [selectedTown, setSelectedTown] = useState('');
     const [deliveryAddress, setDeliveryAddress] = useState(''); // New state for street address
@@ -44,15 +45,20 @@ export function NewOrder() {
 
     useEffect(() => {
         // Cargar carrito inicial si venimos de "Repetir Pedido"
-        if (location.state && location.state.initialCart) {
-            const initialCart = {};
-            location.state.initialCart.forEach(item => {
-                // Verificar que el producto aún existe en el catálogo actual
-                if (PRODUCTS.find(p => p.id === item.id)) {
-                    initialCart[item.id] = item.quantity;
-                }
-            });
-            setCart(initialCart);
+        if (location.state) {
+            if (location.state.initialCart) {
+                const initialCart = {};
+                location.state.initialCart.forEach(item => {
+                    // Verificar que el producto aún existe en el catálogo actual
+                    if (PRODUCTS.find(p => p.id === item.id)) {
+                        initialCart[item.id] = item.quantity;
+                    }
+                });
+                setCart(initialCart);
+            }
+            if (location.state.isRecurring) {
+                setIsRecurringOrder(true);
+            }
         }
     }, [location.state]);
 
@@ -164,15 +170,19 @@ export function NewOrder() {
 
             // REMOVED AUTO-UPDATE USER ADDRESS - SEPARATING CONCERNS AS REQUESTED
 
-            await OrderService.createOrder({
+            const orderData = {
                 userId: user.email || user.username || user.id,
                 items: orderItems,
                 deliveryDate: deliveryDate,
                 total: calculateTotal(),
                 paymentMethod: paymentMethod,
-                shippingAddress: deliveryAddress, // New field
-                shippingTown: selectedTown       // New field
-            });
+                shippingAddress: deliveryAddress,
+                shippingTown: selectedTown,
+                invoiceNumber: `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+                isRecurring: isRecurringOrder // NEW: Send flag to DB
+            };
+
+            await OrderService.createOrder(orderData);
 
             // FIX: Usar replace: true para evitar bucles de historial y navegación limpia
             navigate('/history', { replace: true });

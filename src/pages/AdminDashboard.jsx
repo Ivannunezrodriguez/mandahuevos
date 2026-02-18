@@ -22,7 +22,8 @@ import {
     DownloadSimple,
     Envelope,
     Funnel,
-    Trash
+    Trash,
+    ArrowCounterClockwise // NEW: Recurring Icon
 } from 'phosphor-react';
 
 import { useNavigate } from 'react-router-dom';
@@ -41,6 +42,7 @@ export function AdminDashboard() {
     // Filters
     const [filterText, setFilterText] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [userFilterText, setUserFilterText] = useState('');
 
     const navigate = useNavigate();
 
@@ -97,6 +99,18 @@ export function AdminDashboard() {
             return matchesText && matchesStatus;
         });
     }, [orders, filterText, statusFilter]);
+
+    const filteredUsers = useMemo(() => {
+        return users.filter(u => {
+            if (!userFilterText) return true;
+            const text = userFilterText.toLowerCase();
+            return (
+                (u.full_name && u.full_name.toLowerCase().includes(text)) ||
+                (u.email && u.email.toLowerCase().includes(text)) ||
+                (u.phone && u.phone.toLowerCase().includes(text))
+            );
+        });
+    }, [users, userFilterText]);
 
     const handleStatusUpdate = async (orderId, newStatus) => {
         // if (!window.confirm('¿Confirmar cambio de estado?')) return;
@@ -482,7 +496,14 @@ export function AdminDashboard() {
                                 {/* Column 1: Invoice */}
                                 <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}>
                                     {expandedOrder === order.id ? <CaretDown /> : <CaretRight />}
-                                    <span style={{ fontWeight: 600, color: 'var(--color-accent-primary)' }}>{order.invoiceNumber}</span>
+                                    <span style={{ fontWeight: 600, color: 'var(--color-accent-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {order.isRecurring && (
+                                            <div title="Pedido Recurrente" style={{ color: 'var(--color-accent-primary)' }}>
+                                                <ArrowCounterClockwise size={20} weight="bold" />
+                                            </div>
+                                        )}
+                                        {order.invoiceNumber}
+                                    </span>
                                 </div>
 
                                 {/* Column 2: Date */}
@@ -719,6 +740,29 @@ export function AdminDashboard() {
             {
                 activeTab === 'users' && (
                     <div className="glass-card">
+                        <div style={{ marginBottom: '1rem', position: 'relative' }}>
+                            <input
+                                type="text"
+                                placeholder="Buscar usuario por nombre, email o teléfono..."
+                                value={userFilterText}
+                                onChange={(e) => setUserFilterText(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem 1rem 0.75rem 2.5rem',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: 'var(--radius-md)',
+                                    color: 'var(--color-text-primary)',
+                                    outline: 'none'
+                                }}
+                            />
+                            <MagnifyingGlass
+                                size={20}
+                                color="var(--color-text-muted)"
+                                style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}
+                            />
+                        </div>
+
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ textAlign: 'left', borderBottom: '2px solid var(--color-border)' }}>
@@ -730,7 +774,7 @@ export function AdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.map(u => (
+                                {filteredUsers.map(u => (
                                     <tr key={u.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                                         <td style={{ padding: '1rem' }}>
                                             <strong>{u.full_name || 'Sin Nombre'}</strong>
